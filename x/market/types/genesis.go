@@ -8,9 +8,10 @@ import (
 )
 
 // NewGenesisState creates a new GenesisState object
-func NewGenesisState(terraPoolDelta sdk.Dec, params Params) *GenesisState {
+func NewGenesisState(terraPoolDelta sdk.Dec, lunaPoolDelta sdk.Dec, params Params) *GenesisState {
 	return &GenesisState{
 		TerraPoolDelta: terraPoolDelta,
+		LunaPoolDelta:  lunaPoolDelta,
 		Params:         params,
 	}
 }
@@ -20,6 +21,7 @@ func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		TerraPoolDelta: sdk.ZeroDec(),
 		Params:         DefaultParams(),
+		LunaPoolDelta:  sdk.ZeroDec(),
 	}
 }
 

@@ -58,6 +58,7 @@ func RandomizedGenState(simState *module.SimulationState) {
 
 	marketGenesis := types.NewGenesisState(
 		sdk.ZeroDec(),
+		sdk.ZeroDec(),
 		types.Params{
 			BasePool:           basePool,
 			PoolRecoveryPeriod: poolRecoveryPeriod,

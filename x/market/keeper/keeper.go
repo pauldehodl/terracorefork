@@ -70,6 +70,17 @@ func (k Keeper) GetTerraPoolDelta(ctx sdk.Context) sdk.Dec {
 	k.cdc.MustUnmarshal(bz, &dp)
 	return dp.Dec
 }
+func (k Keeper) GetLunaPoolDelta(ctx sdk.Context) sdk.Dec {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.LunaPoolDeltaKey)
+	if bz == nil {
+		return sdk.ZeroDec()
+	}
+
+	dp := sdk.DecProto{}
+	k.cdc.MustUnmarshal(bz, &dp)
+	return dp.Dec
+}
 
 // SetTerraPoolDelta updates TerraPoolDelta which is gap between the TerraPool and the BasePool
 func (k Keeper) SetTerraPoolDelta(ctx sdk.Context, delta sdk.Dec) {
@@ -77,17 +88,23 @@ func (k Keeper) SetTerraPoolDelta(ctx sdk.Context, delta sdk.Dec) {
 	bz := k.cdc.MustMarshal(&sdk.DecProto{Dec: delta})
 	store.Set(types.TerraPoolDeltaKey, bz)
 }
+func (k Keeper) SetLunaPoolDelta(ctx sdk.Context, delta sdk.Dec) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&sdk.DecProto{Dec: delta})
+	store.Set(types.LunaPoolDeltaKey, bz)
+}
 
 // ReplenishPools replenishes each pool(Terra,Luna) to BasePool
 func (k Keeper) ReplenishPools(ctx sdk.Context) {
-	poolDelta := k.GetTerraPoolDelta(ctx)
-
+	poolTerraDelta := k.GetTerraPoolDelta(ctx)
+	poolLunaDelta := k.GetLunaPoolDelta(ctx)
 	poolRecoveryPeriod := int64(k.PoolRecoveryPeriod(ctx))
-	poolRegressionAmt := poolDelta.QuoInt64(poolRecoveryPeriod)
-
+	poolTerraRegressionAmt := poolTerraDelta.QuoInt64(poolRecoveryPeriod)
+	poolLunaRegressionAmt := poolLunaDelta.QuoInt64(poolRecoveryPeriod)
 	// Replenish pools towards each base pool
 	// regressionAmt cannot make delta zero
-	poolDelta = poolDelta.Sub(poolRegressionAmt)
-
-	k.SetTerraPoolDelta(ctx, poolDelta)
+	poolTerraDelta = poolTerraDelta.Sub(poolTerraRegressionAmt)
+	poolLunaDelta = poolLunaDelta.Sub(poolLunaRegressionAmt)
+	k.SetTerraPoolDelta(ctx, poolTerraDelta)
+	k.SetLunaPoolDelta(ctx, poolLunaDelta)
 }

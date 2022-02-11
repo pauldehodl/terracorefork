@@ -28,6 +28,6 @@ func InitGenesis(ctx sdk.Context, keeper keeper.Keeper, data *types.GenesisState
 func ExportGenesis(ctx sdk.Context, keeper keeper.Keeper) (data *types.GenesisState) {
 	params := keeper.GetParams(ctx)
 	terraPoolDelta := keeper.GetTerraPoolDelta(ctx)
-
-	return types.NewGenesisState(terraPoolDelta, params)
+	lunaPoolDelta := keeper.GetLunaPoolDelta(ctx)
+	return types.NewGenesisState(terraPoolDelta, lunaPoolDelta, params)
 }

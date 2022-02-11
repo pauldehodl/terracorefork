@@ -14,4 +14,7 @@ message GenesisState {
   // the gap between the TerraPool and the BasePool
   bytes terra_pool_delta = 2
       [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec", (gogoproto.nullable) = false];
+  bytes luna_pool_delta = 3
+      [(gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec", (gogoproto.nullable) = false];
+  
 }

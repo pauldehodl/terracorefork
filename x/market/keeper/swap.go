@@ -19,7 +19,7 @@ func (k Keeper) ApplySwapToPool(ctx sdk.Context, offerCoin sdk.Coin, askCoin sdk
 	}
 
 	terraPoolDelta := k.GetTerraPoolDelta(ctx)
-
+	lunaPoolDelta := k.GetLunaPoolDelta(ctx)
 	// In case swapping Terra to Luna, the terra swap pool(offer) must be increased and the luna swap pool(ask) must be decreased
 	if offerCoin.Denom != core.MicroLunaDenom && askCoin.Denom == core.MicroLunaDenom {
 		offerBaseCoin, err := k.ComputeInternalSwap(ctx, sdk.NewDecCoinFromCoin(offerCoin), core.MicroSDRDenom)
@@ -28,6 +28,7 @@ func (k Keeper) ApplySwapToPool(ctx sdk.Context, offerCoin sdk.Coin, askCoin sdk
 		}
 
 		terraPoolDelta = terraPoolDelta.Add(offerBaseCoin.Amount)
+		k.SetTerraPoolDelta(ctx, terraPoolDelta)
 	}
 
 	// In case swapping Luna to Terra, the luna swap pool(offer) must be increased and the terra swap pool(ask) must be decreased
@@ -37,10 +38,9 @@ func (k Keeper) ApplySwapToPool(ctx sdk.Context, offerCoin sdk.Coin, askCoin sdk
 			return err
 		}
 
-		terraPoolDelta = terraPoolDelta.Sub(askBaseCoin.Amount)
+		lunaPoolDelta = lunaPoolDelta.Add(askBaseCoin.Amount)
+		k.SetLunaPoolDelta(ctx, terraPoolDelta)
 	}
-
-	k.SetTerraPoolDelta(ctx, terraPoolDelta)
 
 	return nil
 }
@@ -95,29 +95,20 @@ func (k Keeper) ComputeSwap(ctx sdk.Context, offerCoin sdk.Coin, askDenom string
 
 	basePool := k.BasePool(ctx)
 	minSpread := k.MinStabilitySpread(ctx)
-
+	var poolDelta sdk.Dec
 	// constant-product, which by construction is square of base(equilibrium) pool
 	cp := basePool.Mul(basePool)
-	terraPoolDelta := k.GetTerraPoolDelta(ctx)
-	terraPool := basePool.Add(terraPoolDelta)
-	lunaPool := cp.Quo(terraPool)
-
-	var offerPool sdk.Dec // base denom(usdr) unit
-	var askPool sdk.Dec   // base denom(usdr) unit
 	if offerCoin.Denom != core.MicroLunaDenom {
-		// Terra->Luna swap
-		offerPool = terraPool
-		askPool = lunaPool
+		poolDelta = k.GetTerraPoolDelta(ctx)
 	} else {
-		// Luna->Terra swap
-		offerPool = lunaPool
-		askPool = terraPool
+		poolDelta = k.GetLunaPoolDelta(ctx)
 	}
-
+	inPool := basePool.Add(poolDelta)
+	outPool := cp.Quo(inPool)
 	// Get cp(constant-product) based swap amount
 	// askBaseAmount = askPool - cp / (offerPool + offerBaseAmount)
 	// askBaseAmount is base denom(usdr) unit
-	askBaseAmount := askPool.Sub(cp.Quo(offerPool.Add(baseOfferDecCoin.Amount)))
+	askBaseAmount := outPool.Sub(cp.Quo(inPool.Add(baseOfferDecCoin.Amount)))
 
 	// Both baseOffer and baseAsk are usdr units, so spread can be calculated by
 	// spread = (baseOfferAmt - baseAskAmt) / baseOfferAmt

@@ -12038,6 +12038,7 @@ GenesisState defines the market module's genesis state.
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#terra.market.v1beta1.Params) |  | params defines all the paramaters of the module. |
 | `terra_pool_delta` | [bytes](#bytes) |  | the gap between the TerraPool and the BasePool |
+| `luna_pool_delta` | [bytes](#bytes) |  |  |
 
 
 
